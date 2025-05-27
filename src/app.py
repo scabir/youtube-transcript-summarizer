@@ -2,12 +2,14 @@ import argparse
 from pytube import YouTube
 from utils import extract_video_id, get_transcript, save_markdown
 from generator import generate_structure, generate_detailed_content
-from config import OPENAI_CONFIG, DEFAULT_MODEL
+from config_loader import load_config
+
+config = load_config()
 
 def main():
     parser = argparse.ArgumentParser(description="YouTube Transcript Summarizer")
     parser.add_argument("--url", required=True, help="YouTube video URL")
-    parser.add_argument('--language', type=str, default='en', help='Language code for the transcript.')
+    parser.add_argument('--language', type=str, default=config['language']['default'], help='Language code for the transcript.')
     args = parser.parse_args()
 
     video_id = extract_video_id(args.url)

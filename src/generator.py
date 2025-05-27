@@ -1,6 +1,13 @@
 import openai
 import os
-from config import OPENAI_CONFIG, DEFAULT_MODEL, RESULTS_FOLDER, MAX_TOKENS
+from config_loader import load_config
+
+config = load_config()
+
+OPENAI_CONFIG = config['openai']
+RESULTS_FOLDER = config['paths']['results_folder']
+DEFAULT_MODEL = OPENAI_CONFIG['default_model']
+MAX_TOKENS = OPENAI_CONFIG['max_tokens']
 
 def generate_filename(video_title, video_id):
     """Generate a filename using video title and ID."""
@@ -15,8 +22,7 @@ def generate_filename(video_title, video_id):
 
 def generate_structure(transcript):
     """Generate initial structure using OpenAI."""
-    client_config = {k: v for k, v in OPENAI_CONFIG.items() if k != 'project' and v}
-    client = openai.OpenAI(**client_config)
+    client = openai.OpenAI(api_key=OPENAI_CONFIG['api_key'])
     
     prompt = f"""
     Analyze the following video transcript and propose a structured outline:
@@ -35,21 +41,21 @@ def generate_structure(transcript):
         response = client.chat.completions.create(
             model=DEFAULT_MODEL,
             messages=[
-                {"role": "system", "content": "You are a professional content structurer."},
+                {"role": "system", "content": "You are a professional content writer who provides comprehensive and detailed responses."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=500,
-            temperature=0.7
+            max_tokens=MAX_TOKENS,
+            temperature=0.7,
+            top_p=0.9
         )
-        return response.choices[0].message.content.strip()
+        return response.choices[0].message.content
     except Exception as e:
-        print(f"Error generating structure: {e}")
+        print(f"Error generating structure: {str(e)}")
         return None
 
 def generate_detailed_content(transcript, structure):
     """Generate detailed content for each section."""
-    client_config = {k: v for k, v in OPENAI_CONFIG.items() if k != 'project' and v}
-    client = openai.OpenAI(**client_config)
+    client = openai.OpenAI(api_key=OPENAI_CONFIG['api_key'])
     
     prompt = f"""
     Using the following transcript and proposed structure, generate detailed content:
@@ -77,12 +83,11 @@ def generate_detailed_content(transcript, structure):
                 {"role": "system", "content": "You are a professional content writer who provides comprehensive and detailed responses."},
                 {"role": "user", "content": prompt}
             ],
-            # Feel free to configure the variables below.
-            max_tokens=MAX_TOKENS,  # Maximum allowed for GPT-4
+            max_tokens=MAX_TOKENS,  
             temperature=0.7,
-            top_p=0.9,  # Added to encourage more diverse responses
-            frequency_penalty=0.2,  # Added to reduce repetition
-            presence_penalty=0.2  # Added to encourage new topics
+            top_p=0.9,  
+            frequency_penalty=0.2,  
+            presence_penalty=0.2  
         )
         return response.choices[0].message.content.strip()
     except Exception as e:

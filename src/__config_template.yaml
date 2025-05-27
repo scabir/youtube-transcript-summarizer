@@ -1,0 +1,11 @@
+openai:
+  api_key: ""
+  default_model: "gpt-3.5-turbo"
+  max_tokens: 4096
+
+paths:
+  results_folder: "results"
+
+language:
+  default: "en"
+  supported: ["en", "tr", "es", "fr", "de"]

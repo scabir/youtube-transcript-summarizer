@@ -4,9 +4,21 @@ A tool that generates structured summaries of YouTube videos using OpenAI's GPT 
 
 ## Configuration
 
-You need to have a file called `config.py` in the `src` directory. However, there is no `config.py` file included in the repository for security reasons. You need to create your own `config.py` file in the `src` directory. Use the template file `__config_template.py` as a starting point and replace the placeholder values with your actual configuration. You can rename and use it. config.py file will be excluded from the repository.
+You need to have a file called `config.yaml` in the `config` directory. However, there is no `config.yaml` file included in the repository for security reasons. You need to create your own `config.yaml` file in the `config` directory. Use the template file `__config_template.yaml` as a starting point and replace the placeholder values with your actual configuration. You can rename and use it. config.yaml file will be excluded from the repository.
 
-Of course, there are better ways of configuring an application, please don't mention it. However, for the simplicity of this tool, we will use a simple configuration file. Feel free to change it to your liking.
+```yaml
+openai:
+  api_key: "asdfasdfasdf"
+  default_model: "gpt-3.5-turbo"
+  max_tokens: 4096
+
+paths:
+  results_folder: "../results"
+
+language:
+  default: "en"
+  supported: ["en", "tr", "es", "fr", "de"]
+```
 
 ```python
 # OpenAI API Configuration
@@ -32,10 +44,10 @@ Replace `<YOUR_YOUTUBE_VIDEO_URL>` with the URL of the YouTube video you want to
 For example:
 
 ```bash
-python app.py --url https://www.youtube.com/watch?v=xxyyzz
+python app.py --url https://www.youtube.com/watch?v=xxyyzz --language en
 ```
 
-This will generate a markdown file in the `results` directory with the summary of the video. You can change the `RESULTS_FOLDER` in the `config.py` file to change the directory where the markdown file is saved.
+This will generate a markdown file in the `results` directory with the summary of the video. You can change the `results_folder` in the `config.yaml` file to change the directory where the markdown file is saved.
 
 ## License
 
