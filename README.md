@@ -53,8 +53,11 @@ pip install -r requirements.txt
 For example:
 
 ```bash
-python app.py --url https://www.youtube.com/watch?v=xxyyzz --language en
+python app.py --url https://www.youtube.com/watch?v=xxyyzz --language en --output en
 ```
+language and output ar enot mandatory parameters. If you do not provide them, the tool will use the default values from the config.yaml file.
+
+You can change the `language` and `output` parameters to change the language of the transcript and the language of the output.
 
 This will generate a markdown file in the `results` directory with the summary of the video. You can change the `results_folder` in the `config.yaml` file to change the directory where the markdown file is saved.
 
