@@ -41,6 +41,15 @@ python app.py --url <YOUR_YOUTUBE_VIDEO_URL>
 
 Replace `<YOUR_YOUTUBE_VIDEO_URL>` with the URL of the YouTube video you want to summarize.
 
+I strongly recommend using a virtual environment to run this tool. You can create a virtual environment by running the following command:
+
+```bash
+cd src
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
 For example:
 
 ```bash

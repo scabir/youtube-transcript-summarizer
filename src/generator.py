@@ -27,19 +27,24 @@ def generate_structure(transcript):
     prompt = f"""
     Analyze the following video transcript and propose a structured outline:
     
+    Transcript: {transcript}
+    
     Please provide:
     1. A clear, descriptive title
     2. Main sections/topics
     3. Key points under each section
     
-    Respond in a markdown-friendly format.
+    
     """
     
     try:
         response = client.chat.completions.create(
             model=DEFAULT_MODEL,
             messages=[
-                {"role": "system", "content": "You are a professional content writer who provides comprehensive and detailed responses."},
+                {"role": "system", "content": "You are a professional content writer who provides comprehensive and detailed responses." },
+                {"role": "system", "content": "Do not halisunate and never write meaningless content." },
+                {"role": "system", "content": "Feel free to use maximum tokens if needed, summarize as detailed as you can." },
+                {"role": "system", "content": "Respond in a markdown-friendly format." },                
                 {"role": "user", "content": prompt}
             ],
             max_tokens=MAX_TOKENS,
