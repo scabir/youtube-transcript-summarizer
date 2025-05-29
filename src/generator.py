@@ -10,7 +10,6 @@ DEFAULT_MODEL = OPENAI_CONFIG['default_model']
 MAX_TOKENS = OPENAI_CONFIG['max_tokens']
 
 def generate_filename(video_title, video_id):
-    """Generate a filename using video title and ID."""
     if video_title == video_id:
         return os.path.join(RESULTS_FOLDER, f"{video_id}.md")
     
@@ -21,7 +20,6 @@ def generate_filename(video_title, video_id):
     return os.path.join(RESULTS_FOLDER, filename)
 
 def generate_structure(transcript, output_language):
-    """Generate initial structure using OpenAI."""
     client = openai.OpenAI(api_key=OPENAI_CONFIG['api_key'])
     
     prompt = f"""
@@ -54,7 +52,6 @@ def generate_structure(transcript, output_language):
         return None
 
 def generate_detailed_content(transcript, structure, output_language):
-    """Generate detailed content for each section."""
     client = openai.OpenAI(api_key=OPENAI_CONFIG['api_key'])
     
     prompt = f"""
@@ -82,6 +79,7 @@ def generate_detailed_content(transcript, structure, output_language):
             messages=[
                 {"role": "system", "content": "You are a professional content writer who provides comprehensive and detailed responses."},
                 {"role": "system", "content": "Do not hallucinate and never write meaningless content." },
+                {"role": "system", "content": "Do not mention that this is a transcript." },
                 {"role": "system", "content": "Feel free to use maximum tokens if needed, summarize as detailed as you can." },
                 {"role": "system", "content": "Respond in a markdown-friendly format." },                
                 {"role": "user", "content": prompt}
