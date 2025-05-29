@@ -10,6 +10,7 @@ def main():
     parser = argparse.ArgumentParser(description="YouTube Transcript Summarizer")
     parser.add_argument("--url", required=True, help="YouTube video URL")
     parser.add_argument('--language', type=str, default=config['language']['default'], help='Language code for the transcript.')
+    parser.add_argument('--output', type=str, default='en', help='Output language code (default: en)')
     args = parser.parse_args()
 
     video_id = extract_video_id(args.url)
@@ -28,12 +29,12 @@ def main():
         print("Error: Could not retrieve transcript")
         return
 
-    structure = generate_structure(transcript)
+    structure = generate_structure(transcript, args.output)
     if not structure:
         print("Error: Could not generate structure")
         return
 
-    full_content = generate_detailed_content(transcript, structure)
+    full_content = generate_detailed_content(transcript, structure, args.output)
     if not full_content:
         print("Error: Could not generate detailed content")
         return

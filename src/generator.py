@@ -20,12 +20,12 @@ def generate_filename(video_title, video_id):
     filename = f"{clean_title}__{video_id}.md"
     return os.path.join(RESULTS_FOLDER, filename)
 
-def generate_structure(transcript):
+def generate_structure(transcript, output_language):
     """Generate initial structure using OpenAI."""
     client = openai.OpenAI(api_key=OPENAI_CONFIG['api_key'])
     
     prompt = f"""
-    Analyze the following video transcript and propose a structured outline:
+    Analyze the following video transcript and propose a structured outline. The output will be in {output_language} language.
     
     Transcript: {transcript}
     
@@ -42,9 +42,6 @@ def generate_structure(transcript):
             model=DEFAULT_MODEL,
             messages=[
                 {"role": "system", "content": "You are a professional content writer who provides comprehensive and detailed responses." },
-                {"role": "system", "content": "Do not halisunate and never write meaningless content." },
-                {"role": "system", "content": "Feel free to use maximum tokens if needed, summarize as detailed as you can." },
-                {"role": "system", "content": "Respond in a markdown-friendly format." },                
                 {"role": "user", "content": prompt}
             ],
             max_tokens=MAX_TOKENS,
@@ -56,12 +53,12 @@ def generate_structure(transcript):
         print(f"Error generating structure: {str(e)}")
         return None
 
-def generate_detailed_content(transcript, structure):
+def generate_detailed_content(transcript, structure, output_language):
     """Generate detailed content for each section."""
     client = openai.OpenAI(api_key=OPENAI_CONFIG['api_key'])
     
     prompt = f"""
-    Using the following transcript and proposed structure, generate detailed content:
+    Using the following transcript and proposed structure, generate detailed content. The output will be in {output_language} language.
     
     Structure:
     {structure}
@@ -84,6 +81,9 @@ def generate_detailed_content(transcript, structure):
             model=DEFAULT_MODEL,
             messages=[
                 {"role": "system", "content": "You are a professional content writer who provides comprehensive and detailed responses."},
+                {"role": "system", "content": "Do not hallucinate and never write meaningless content." },
+                {"role": "system", "content": "Feel free to use maximum tokens if needed, summarize as detailed as you can." },
+                {"role": "system", "content": "Respond in a markdown-friendly format." },                
                 {"role": "user", "content": prompt}
             ],
             max_tokens=MAX_TOKENS,  
