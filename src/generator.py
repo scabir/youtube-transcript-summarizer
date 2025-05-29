@@ -27,8 +27,6 @@ def generate_structure(transcript):
     prompt = f"""
     Analyze the following video transcript and propose a structured outline:
     
-    Transcript: {transcript[:4000]}  # Limit to first 4000 characters
-    
     Please provide:
     1. A clear, descriptive title
     2. Main sections/topics
