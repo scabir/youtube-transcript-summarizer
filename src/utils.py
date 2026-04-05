@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 config = load_config()
+ytt_api = YouTubeTranscriptApi()
 
 def generate_filename(video_title, video_id):
     if video_title == video_id:
@@ -48,36 +49,33 @@ def load_transcript_from_cache(video_id, language='en'):
         transcript = json.load(f)
     return transcript
 
-def get_fallback_transcript(video_id, base_lang):
-    try:
-        print(f"Attempting to retrieve transcript with base language: {base_lang}")
-        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[base_lang])
-        print(f"Successfully retrieved transcript in base language: {base_lang}")
-        return transcript
-    except Exception as e:
-        print(f"Error retrieving transcript with base language {base_lang}: {str(e)}")
-        
-    try:
-        print("Attempting to retrieve transcript in English as fallback")
-        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['en'])
-        print("Successfully retrieved transcript in English")
-        return transcript
-    except Exception as e:
-        print(f"Error retrieving transcript in English: {str(e)}")
-        print("No transcript available in any language")
-        return None
+def build_language_priority(language):
+    languages = []
+    if language:
+        languages.append(language)
 
-def fetch_transcript(video_id, language='en'):
-    try:
-        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[language])
-        print(f"Successfully retrieved transcript in language: {language}")
-        return transcript
-    except Exception as e:
-        print(f"Error retrieving transcript with language {language}: {str(e)}")
-        
         base_lang = language.split('-')[0]
         if base_lang != language:
-            return get_fallback_transcript(video_id, base_lang)
+            languages.append(base_lang)
+
+    if 'en' not in languages:
+        languages.append('en')
+
+    return languages
+
+def fetch_transcript(video_id, language='en'):
+    languages = build_language_priority(language)
+    print(f"Attempting transcript fetch with language priority: {languages}")
+
+    try:
+        fetched_transcript = ytt_api.fetch(video_id, languages=languages)
+        print(
+            "Successfully retrieved transcript in language: "
+            f"{fetched_transcript.language_code}"
+        )
+        return fetched_transcript.to_raw_data()
+    except Exception as e:
+        print(f"Error retrieving transcript for {video_id}: {str(e)}")
         return None
 
 def get_transcript(video_id, language='en'):
