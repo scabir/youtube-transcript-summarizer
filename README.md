@@ -65,6 +65,8 @@ Optional arguments:
 - `--language`: transcript language (default comes from config).
 - `--output`: output language for summary (default `en`).
 - `--quality`: `economy`, `balanced`, or `max_quality`.
+- `--start`: optional start time (`mm:ss` or `hh:mm:ss`).
+- `--end`: optional end time (`mm:ss` or `hh:mm:ss`).
 
 Example:
 
@@ -74,6 +76,24 @@ Example:
   --language tr \
   --output en \
   --quality balanced
+```
+
+Summarize only a specific segment:
+
+```bash
+.venv/bin/python src/app.py \
+  --url "https://www.youtube.com/watch?v=3iULqx0IPDg" \
+  --start 12:32 \
+  --end 14:05
+```
+
+Hour format is also supported:
+
+```bash
+.venv/bin/python src/app.py \
+  --url "https://www.youtube.com/watch?v=3iULqx0IPDg" \
+  --start 01:12:14 \
+  --end 12:03:04
 ```
 
 Important for `zsh`: always quote URL values (`"..."`) so `?` and `&` are not interpreted by the shell.
