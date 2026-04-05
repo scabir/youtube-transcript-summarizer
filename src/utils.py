@@ -85,8 +85,7 @@ def get_transcript(video_id, language='en'):
     cached_transcript = load_transcript_from_cache(video_id, language)
     if cached_transcript:
         print(f"Loaded transcript from cache for video ID: {video_id}")
-        clean_transcript = reduce_transcript(cached_transcript)
-        return clean_transcript
+        return normalize_transcript_entries(cached_transcript)
     
     transcript = fetch_transcript(video_id, language)
     
@@ -96,16 +95,16 @@ def get_transcript(video_id, language='en'):
     cache_file = save_transcript_to_cache(video_id, transcript, language)
     print(f"Saved transcript to cache: {cache_file}")
     
-    clean_transcript = reduce_transcript(transcript)
-    return clean_transcript
+    return normalize_transcript_entries(transcript)
 
-def reduce_transcript(transcript):
+def normalize_transcript_entries(transcript):
     if transcript is None:
         return None
-    
+
     if not isinstance(transcript, list):
         raise ValueError("Transcript must be a list")
-    
+
+    normalized = []
     for entry in transcript:
         if not isinstance(entry, dict):
             raise ValueError("Transcript entries must be dictionaries")
@@ -113,8 +112,34 @@ def reduce_transcript(transcript):
             raise ValueError("Transcript entry missing required 'text' field")
         if not isinstance(entry['text'], str):
             raise ValueError("Transcript text field must be a string")
-    
-    return "\n".join(entry['text'] for entry in transcript)
+
+        start = entry.get('start', 0)
+        duration = entry.get('duration', 0)
+        try:
+            start = float(start)
+        except (TypeError, ValueError):
+            start = 0.0
+        try:
+            duration = float(duration)
+        except (TypeError, ValueError):
+            duration = 0.0
+
+        normalized.append(
+            {
+                'text': entry['text'].strip(),
+                'start': max(0.0, start),
+                'duration': max(0.0, duration),
+            }
+        )
+
+    return [entry for entry in normalized if entry['text']]
+
+def reduce_transcript(transcript):
+    normalized = normalize_transcript_entries(transcript)
+    if normalized is None:
+        return None
+
+    return "\n".join(entry['text'] for entry in normalized)
 
 def save_markdown(content, video_title, video_id):
     filename = generate_filename(video_title, video_id)

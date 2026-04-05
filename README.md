@@ -1,70 +1,93 @@
 # YouTube Transcript Summarizer
 
-A tool that generates structured summaries of YouTube videos using OpenAI's GPT models.
+Generate high-quality, token-efficient summaries from YouTube transcripts using OpenAI models.
+
+## How It Works
+
+The summarization pipeline is adaptive:
+
+1. Fetch transcript (with local cache in `results/_cache`).
+2. Estimate transcript size and pick a route:
+   - `short`: single-pass summary with an explicit plan section.
+   - `medium` / `long`: chunk transcript -> extract chunk notes -> generate plan -> synthesize final summary.
+3. Scale output length dynamically so long transcripts get sufficiently detailed summaries, while short transcripts stay concise.
+4. Print per-call token usage and estimated cost telemetry.
 
 ## Configuration
 
-You need to have a file called `config.yaml` in the `config` directory. However, there is no `config.yaml` file included in the repository for security reasons. You need to create your own `config.yaml` file in the `config` directory. Use the template file `__config_template.yaml` as a starting point and replace the placeholder values with your actual configuration. You can rename and use it. config.yaml file will be excluded from the repository.
+Create `config/config.yaml` from `config/__config_template.yaml`.
 
 ```yaml
 openai:
-  api_key: "asdfasdfasdf"
+  api_key: "YOUR_OPENAI_API_KEY"
   default_model: "gpt-5.4"
   max_tokens: 128000
 
 paths:
-  results_folder: "../results"
+  results_folder: "results"
 
 language:
   default: "en"
   supported: ["en", "tr", "es", "fr", "de"]
+
+summarization:
+  default_quality: "balanced" # economy | balanced | max_quality
+  short_threshold_tokens: 2200
+  long_threshold_tokens: 12000
+  chunk_target_tokens: 1800
+  max_chunks: 18
+  map_max_tokens: 900
+  plan_max_tokens: 1800
+  map_reasoning_effort: "low"
+  plan_reasoning_effort: "low"
+  short_reasoning_effort: "low"
+  final_reasoning_effort: "medium"
 ```
 
-```python
-# OpenAI API Configuration
-# IMPORTANT: Replace the placeholder with your actual OpenAI API key
-OPENAI_API_KEY = ""  # Your OpenAI API key here
-DEFAULT_MODEL = 'gpt-5.4'
-MAX_TOKENS = 128000
+## Install
 
-# Directory configuration
-RESULTS_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'results')
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r src/requirements.txt
 ```
 
 ## Usage
 
-To use the tool, run the following command:
+From repository root:
 
 ```bash
-python app.py --url <YOUR_YOUTUBE_VIDEO_URL>
+.venv/bin/python src/app.py --url "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 ```
 
-Replace `<YOUR_YOUTUBE_VIDEO_URL>` with the URL of the YouTube video you want to summarize.
+Optional arguments:
 
-I strongly recommend using a virtual environment to run this tool. You can create a virtual environment by running the following command:
+- `--language`: transcript language (default comes from config).
+- `--output`: output language for summary (default `en`).
+- `--quality`: `economy`, `balanced`, or `max_quality`.
+
+Example:
 
 ```bash
-cd src
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+.venv/bin/python src/app.py \
+  --url "https://www.youtube.com/watch?v=3iULqx0IPDg" \
+  --language tr \
+  --output en \
+  --quality balanced
 ```
 
-For example:
+Important for `zsh`: always quote URL values (`"..."`) so `?` and `&` are not interpreted by the shell.
 
-```bash
-python app.py --url https://www.youtube.com/watch?v=xxyyzz --language en --output en
-```
-language and output ar enot mandatory parameters. If you do not provide them, the tool will use the default values from the config.yaml file.
+## Output
 
-You can change the `language` and `output` parameters to change the language of the transcript and the language of the output.
-
-This will generate a markdown file in the `results` directory with the summary of the video. You can change the `results_folder` in the `config.yaml` file to change the directory where the markdown file is saved.
+- Final summary is saved as markdown in `results/`.
+- Transcript cache is saved in `results/_cache/`.
+- Runtime logs include:
+  - chosen summarization route,
+  - selected models by stage,
+  - per-call token usage,
+  - aggregated usage/cost estimate.
 
 ## License
 
 MIT License
-
-## Author
-
-Suleyman Cabir Ataman, PhD

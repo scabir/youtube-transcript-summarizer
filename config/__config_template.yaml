@@ -9,3 +9,16 @@ paths:
 language:
   default: "en"
   supported: ["en", "tr", "es", "fr", "de"]
+
+summarization:
+  default_quality: "balanced" # economy | balanced | max_quality
+  short_threshold_tokens: 2200
+  long_threshold_tokens: 12000
+  chunk_target_tokens: 1800
+  max_chunks: 18
+  map_max_tokens: 900
+  plan_max_tokens: 1800
+  map_reasoning_effort: "low"
+  plan_reasoning_effort: "low"
+  short_reasoning_effort: "low"
+  final_reasoning_effort: "medium"
