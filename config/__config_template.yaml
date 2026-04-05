@@ -1,7 +1,7 @@
 openai:
   api_key: ""
-  default_model: "gpt-3.5-turbo"
-  max_tokens: 4096
+  default_model: "gpt-5.4"
+  max_tokens: 128000
 
 paths:
   results_folder: "results"

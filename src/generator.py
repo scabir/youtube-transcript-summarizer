@@ -42,7 +42,7 @@ def generate_structure(transcript, output_language):
                 {"role": "system", "content": "You are a professional content writer who provides comprehensive and detailed responses." },
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=MAX_TOKENS,
+            max_completion_tokens=MAX_TOKENS,
             temperature=0.7,
             top_p=0.9
         )
@@ -84,7 +84,7 @@ def generate_detailed_content(transcript, structure, output_language):
                 {"role": "system", "content": "Respond in a markdown-friendly format." },                
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=MAX_TOKENS,  
+            max_completion_tokens=MAX_TOKENS,
             temperature=0.7,
             top_p=0.9,  
             frequency_penalty=0.2,  

@@ -9,8 +9,8 @@ You need to have a file called `config.yaml` in the `config` directory. However,
 ```yaml
 openai:
   api_key: "asdfasdfasdf"
-  default_model: "gpt-3.5-turbo"
-  max_tokens: 4096
+  default_model: "gpt-5.4"
+  max_tokens: 128000
 
 paths:
   results_folder: "../results"
@@ -24,8 +24,8 @@ language:
 # OpenAI API Configuration
 # IMPORTANT: Replace the placeholder with your actual OpenAI API key
 OPENAI_API_KEY = ""  # Your OpenAI API key here
-DEFAULT_MODEL = 'gpt-3.5-turbo'
-MAX_TOKENS = 4096
+DEFAULT_MODEL = 'gpt-5.4'
+MAX_TOKENS = 128000
 
 # Directory configuration
 RESULTS_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'results')
