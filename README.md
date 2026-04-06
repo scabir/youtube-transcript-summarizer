@@ -67,6 +67,7 @@ Optional arguments:
 - `--quality`: `economy`, `balanced`, or `max_quality`.
 - `--start`: optional start time (`mm:ss` or `hh:mm:ss`).
 - `--end`: optional end time (`mm:ss` or `hh:mm:ss`).
+- `--split-by-markers`: if the video has markers/chapters, generate one summary file per marker segment.
 
 Example:
 
@@ -96,6 +97,17 @@ Hour format is also supported:
   --end 12:03:04
 ```
 
+Split by YouTube markers/chapters:
+
+```bash
+.venv/bin/python src/app.py \
+  --url "https://www.youtube.com/watch?v=3iULqx0IPDg" \
+  --split-by-markers
+```
+
+Marker names are used in output filenames. If a marker title is generic (for example `Time Marker`), a fallback part label is used.
+Split files are prefixed with YouTube ID and zero-padded part numbers (`<video_id>_01_`, `<video_id>_02_`, ...).
+
 Important for `zsh`: always quote URL values (`"..."`) so `?` and `&` are not interpreted by the shell.
 
 ## Output
@@ -107,6 +119,8 @@ Important for `zsh`: always quote URL values (`"..."`) so `?` and `&` are not in
   - selected models by stage,
   - per-call token usage,
   - aggregated usage/cost estimate.
+
+By default, summaries are generated as fluent prose without inline timestamp markers.
 
 ## License
 

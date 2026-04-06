@@ -75,6 +75,188 @@ def filter_transcript_entries_by_time_range(transcript_entries, start_seconds, e
 
     return filtered_entries
 
+def extract_text_from_yt_field(value):
+    if isinstance(value, str):
+        return value.strip()
+    if not isinstance(value, dict):
+        return ""
+
+    simple_text = value.get("simpleText")
+    if isinstance(simple_text, str):
+        return simple_text.strip()
+
+    runs = value.get("runs")
+    if isinstance(runs, list):
+        parts = []
+        for run in runs:
+            if isinstance(run, dict) and isinstance(run.get("text"), str):
+                parts.append(run["text"])
+        return "".join(parts).strip()
+
+    return ""
+
+def collect_marker_renderers(data):
+    renderers = []
+
+    def walk(node):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key in {"macroMarkersListItemRenderer", "chapterRenderer"} and isinstance(value, dict):
+                    renderers.append(value)
+                walk(value)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+
+    walk(data)
+    return renderers
+
+def extract_start_seconds_from_renderer(renderer):
+    candidates_in_seconds = [
+        renderer.get("onTap", {}).get("watchEndpoint", {}).get("startTimeSeconds"),
+        renderer.get("navigationEndpoint", {}).get("watchEndpoint", {}).get("startTimeSeconds"),
+    ]
+    for candidate in candidates_in_seconds:
+        if candidate is None:
+            continue
+        try:
+            return float(candidate)
+        except (TypeError, ValueError):
+            continue
+
+    candidates_in_millis = [
+        renderer.get("timeRangeStartMillis"),
+        renderer.get("startTimeMs"),
+        renderer.get("startTimeMillis"),
+        renderer.get("startMillis"),
+    ]
+    for candidate in candidates_in_millis:
+        if candidate is None:
+            continue
+        try:
+            return float(candidate) / 1000.0
+        except (TypeError, ValueError):
+            continue
+
+    time_description = extract_text_from_yt_field(renderer.get("timeDescription"))
+    if time_description:
+        try:
+            return parse_timecode_to_seconds(time_description, "marker timestamp")
+        except ValueError:
+            return None
+
+    return None
+
+def extract_title_from_marker_renderer(renderer):
+    title_candidates = [
+        renderer.get("title"),
+        renderer.get("chapterTitle"),
+        renderer.get("headline"),
+        renderer.get("headerText"),
+    ]
+    for candidate in title_candidates:
+        title = extract_text_from_yt_field(candidate)
+        if title:
+            return title
+    return ""
+
+def extract_video_markers(yt):
+    if yt is None:
+        return []
+
+    try:
+        initial_data = yt.initial_data
+    except Exception as e:
+        print(f"Warning: Could not read video marker metadata: {e}")
+        return []
+
+    renderers = collect_marker_renderers(initial_data)
+    if not renderers:
+        return []
+
+    markers = []
+    for renderer in renderers:
+        start_seconds = extract_start_seconds_from_renderer(renderer)
+        if start_seconds is None:
+            continue
+
+        marker_title = extract_title_from_marker_renderer(renderer)
+        markers.append(
+            {
+                "title": marker_title,
+                "start_seconds": max(0.0, float(start_seconds)),
+            }
+        )
+
+    if not markers:
+        return []
+
+    markers.sort(key=lambda marker: marker["start_seconds"])
+
+    deduped = []
+    seen_starts = set()
+    for marker in markers:
+        key = round(marker["start_seconds"], 3)
+        if key in seen_starts:
+            continue
+        seen_starts.add(key)
+        deduped.append(marker)
+
+    return deduped
+
+def normalize_marker_title(raw_title, index):
+    title = (raw_title or "").strip()
+    if not title:
+        return f"Part {index}"
+
+    if title.lower() in {"time marker", "time markers", "marker", "chapter"}:
+        return f"Part {index}"
+
+    return title
+
+def build_marker_segments(markers, effective_start_seconds, effective_end_seconds, transcript_end_seconds):
+    segments = []
+    if not markers:
+        return segments
+
+    for index, marker in enumerate(markers):
+        marker_start = float(marker["start_seconds"])
+        if index + 1 < len(markers):
+            marker_end = float(markers[index + 1]["start_seconds"])
+        else:
+            marker_end = transcript_end_seconds
+
+        if marker_end <= marker_start:
+            continue
+
+        segment_start = max(marker_start, effective_start_seconds)
+        segment_end = min(marker_end, effective_end_seconds)
+        if segment_start >= segment_end:
+            continue
+
+        segments.append(
+            {
+                "index": index + 1,
+                "title": normalize_marker_title(marker.get("title", ""), index + 1),
+                "start_seconds": segment_start,
+                "end_seconds": segment_end,
+            }
+        )
+
+    return segments
+
+def generate_summary_for_entries(transcript_entries, output_language, quality_mode):
+    full_content, usage_report = generate_summary(
+        transcript_entries,
+        output_language,
+        quality_mode=quality_mode,
+    )
+    if not full_content:
+        return None
+
+    print_usage_report(usage_report)
+    return full_content
+
 def main():
     parser = argparse.ArgumentParser(description="YouTube Transcript Summarizer")
     parser.add_argument("--url", required=True, help="YouTube video URL")
@@ -93,6 +275,11 @@ def main():
         help='Optional end time (mm:ss or hh:mm:ss). Defaults to transcript end.',
     )
     parser.add_argument(
+        '--split-by-markers',
+        action='store_true',
+        help='If available, split by video markers/chapters and generate one summary file per segment.',
+    )
+    parser.add_argument(
         '--quality',
         type=str,
         choices=QUALITY_MODES,
@@ -106,6 +293,7 @@ def main():
         print("Error: Invalid YouTube URL")
         return
 
+    yt = None
     try:
         yt = YouTube(args.url)
         video_title = yt.title
@@ -157,16 +345,66 @@ def main():
         f"{seconds_to_timecode(effective_start_seconds)} - {seconds_to_timecode(effective_end_seconds)}"
     )
 
-    full_content, usage_report = generate_summary(
+    if args.split_by_markers:
+        markers = extract_video_markers(yt)
+        segments = build_marker_segments(
+            markers,
+            effective_start_seconds,
+            effective_end_seconds,
+            transcript_end_seconds,
+        )
+        if segments:
+            successful_segments = 0
+            print(f"Found {len(segments)} marker segments in selected range.")
+            for segment in segments:
+                segment_entries = filter_transcript_entries_by_time_range(
+                    transcript_entries,
+                    segment["start_seconds"],
+                    segment["end_seconds"],
+                )
+                if not segment_entries:
+                    continue
+
+                segment_start_tc = seconds_to_timecode(segment["start_seconds"])
+                segment_end_tc = seconds_to_timecode(segment["end_seconds"])
+                segment_label = segment["title"]
+                segment_index_prefix = f"{segment['index']:02d}"
+                print(
+                    f"Summarizing segment {segment['index']}/{len(segments)}: "
+                    f"{segment_label} ({segment_start_tc} - {segment_end_tc})"
+                )
+
+                full_content = generate_summary_for_entries(
+                    segment_entries,
+                    args.output,
+                    args.quality,
+                )
+                if not full_content:
+                    print(f"Warning: Failed to summarize segment '{segment_label}'.")
+                    continue
+
+                segment_title = (
+                    f"{video_id}_{segment_index_prefix}_{segment_label} "
+                    f"[{segment_start_tc}-{segment_end_tc}]"
+                )
+                save_markdown(full_content, segment_title, video_id)
+                successful_segments += 1
+
+            if successful_segments == 0:
+                print("Error: Could not generate summaries for any marker segment.")
+            return
+
+        print("No video markers found. Falling back to single summary for selected range.")
+
+    full_content = generate_summary_for_entries(
         selected_entries,
         args.output,
-        quality_mode=args.quality,
+        args.quality,
     )
     if not full_content:
         print("Error: Could not generate summary")
         return
 
-    print_usage_report(usage_report)
     if start_seconds is not None or end_seconds is not None:
         range_suffix = (
             f"{seconds_to_timecode(effective_start_seconds)}-"

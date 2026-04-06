@@ -214,6 +214,10 @@ def chunk_to_prompt_text(chunk_entries: List[Dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
+def transcript_entries_to_plain_text(transcript_entries: List[Dict[str, Any]]) -> str:
+    return "\n".join(entry["text"] for entry in transcript_entries if entry.get("text"))
+
+
 def extract_json_object(raw_text: str) -> Optional[Dict[str, Any]]:
     if not raw_text:
         return None
@@ -581,9 +585,8 @@ def chunk_note_to_text(chunk_note: Dict[str, Any]) -> str:
     evidence_items = chunk_note.get("evidence", [])[:6]
     for item in evidence_items:
         if isinstance(item, dict):
-            timestamp = item.get("timestamp", "??:??")
             detail = item.get("detail", "")
-            lines.append(f"  * [{timestamp}] {detail}")
+            lines.append(f"  * {detail}")
 
     actions = chunk_note.get("actions_or_recommendations", [])[:4]
     if actions:
@@ -717,21 +720,25 @@ def generate_short_summary(
     model_name: str,
     usage_report: Dict[str, Any],
 ) -> Optional[str]:
-    transcript_text = chunk_to_prompt_text(transcript_entries)
+    transcript_text = transcript_entries_to_plain_text(transcript_entries)
     prompt = f"""
 Write the best possible summary in {output_language}.
 
-Transcript with timestamps:
+Transcript:
 {transcript_text}
 
 Output requirements:
 - Markdown output.
 - Include `# Title`.
-- Include `## Summary Plan` with 3 to 5 bullets describing your execution plan.
-- Include `## Executive Summary`.
-- Include `## Detailed Summary` with clear subsections.
-- Include `## Key Takeaways`.
-- Cite evidence timestamps as [mm:ss].
+- Include `## Core Summary` with fluent prose paragraphs.
+- Include `## Main Points`.
+- Include `## Detailed Notes` with meaningful subheadings when needed.
+- Include `## Practical Takeaways` only if there are actionable insights.
+- Do not include inline timestamps or time ranges (for example `[09:13]` or `[09:13-10:11]`).
+- Write fluent, natural prose that reads like a polished article.
+- Do not use attribution phrases such as "the speaker says", "the speaker explains",
+  "the video discusses", or "the transcript mentions".
+- Write as direct notes from someone who listened carefully.
 - Stay concise and avoid repetition.
 - Aim for roughly {target_output_tokens} tokens.
 """.strip()
@@ -744,7 +751,9 @@ Output requirements:
                 "role": "system",
                 "content": (
                     "You are an expert analyst creating faithful summaries. "
-                    "Maximize insight density and keep factual grounding."
+                    "Maximize insight density and keep factual grounding. "
+                    "Never output inline timestamp markers. "
+                    "Use direct declarative writing and avoid references to the speaker, transcript, or video."
                 ),
             },
             {"role": "user", "content": prompt},
@@ -779,11 +788,14 @@ Output requirements:
 - Follow the plan's section order.
 - Markdown output.
 - Include `# Title`.
-- Include `## Summary Plan` and list each planned section with its goal.
-- Include `## Executive Summary`.
+- Include `## Core Summary` with fluent prose paragraphs.
 - Include each planned section as `## <Heading>`.
-- Include `## Key Takeaways`.
-- Use timestamps [mm:ss] where evidence supports a claim.
+- Include `## Practical Takeaways` only if there are actionable insights.
+- Do not include inline timestamps or time ranges (for example `[09:13]` or `[09:13-10:11]`).
+- Write fluent, natural prose that reads like a polished article.
+- Do not use attribution phrases such as "the speaker says", "the speaker explains",
+  "the video discusses", or "the transcript mentions".
+- Write as direct notes from someone who listened carefully.
 - Avoid filler and repetition.
 - Target around {target_output_tokens} tokens.
 """.strip()
@@ -796,7 +808,9 @@ Output requirements:
                 "role": "system",
                 "content": (
                     "You write precise, useful, professional summaries. "
-                    "Keep claims grounded and optimize for clarity per token."
+                    "Keep claims grounded and optimize for clarity per token. "
+                    "Never output inline timestamp markers. "
+                    "Do not refer to a speaker, video, or transcript."
                 ),
             },
             {"role": "user", "content": prompt},
