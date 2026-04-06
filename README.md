@@ -57,7 +57,7 @@ pip install -r src/requirements.txt
 From repository root:
 
 ```bash
-.venv/bin/python src/app.py --url "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+.venv/bin/python src/app.py --url "https://www.youtube.com/watch?v=0z9_MhcYvcY"
 ```
 
 Optional arguments:
@@ -73,7 +73,7 @@ Example:
 
 ```bash
 .venv/bin/python src/app.py \
-  --url "https://www.youtube.com/watch?v=3iULqx0IPDg" \
+  --url "https://www.youtube.com/watch?v=0z9_MhcYvcY" \
   --language tr \
   --output en \
   --quality balanced
@@ -83,7 +83,7 @@ Summarize only a specific segment:
 
 ```bash
 .venv/bin/python src/app.py \
-  --url "https://www.youtube.com/watch?v=3iULqx0IPDg" \
+  --url "https://www.youtube.com/watch?v=0z9_MhcYvcY" \
   --start 12:32 \
   --end 14:05
 ```
@@ -92,7 +92,7 @@ Hour format is also supported:
 
 ```bash
 .venv/bin/python src/app.py \
-  --url "https://www.youtube.com/watch?v=3iULqx0IPDg" \
+  --url "https://www.youtube.com/watch?v=0z9_MhcYvcY" \
   --start 01:12:14 \
   --end 12:03:04
 ```
@@ -101,7 +101,7 @@ Split by YouTube markers/chapters:
 
 ```bash
 .venv/bin/python src/app.py \
-  --url "https://www.youtube.com/watch?v=3iULqx0IPDg" \
+  --url "https://www.youtube.com/watch?v=0z9_MhcYvcY" \
   --split-by-markers
 ```
 
